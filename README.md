@@ -4,7 +4,9 @@ A full-stack hotel booking platform for **Grand Plaza Hotel, Bengaluru** — bui
 
 Book rooms, check availability, and manage reservations through a modern single-hotel website with **email/password** and **Google Sign-In**.
 
-**Repository:** [github.com/prat-975/Hotel-Booking-App](https://github.com/prat-975/Hotel-Booking-App)
+**Live repo:** [github.com/prat-975/Hotel-Booking-App](https://github.com/prat-975/Hotel-Booking-App)
+
+---
 
 ## Tech Stack
 
@@ -18,26 +20,39 @@ Book rooms, check availability, and manage reservations through a modern single-
 
 ```
 Hotel-Booking-App/
-├── backend/          # Spring Boot REST API
-└── frontend/         # React SPA
+├── backend/                 # Spring Boot REST API
+│   ├── src/main/java/       # Controllers, services, security, models
+│   └── src/main/resources/  # application.properties
+└── frontend/                # React SPA
+    ├── src/pages/           # Home, Rooms, Booking, Login, My Bookings
+    ├── src/components/      # Navbar, HotelCard, ProtectedRoute
+    └── src/api/             # Axios API client
 ```
 
 ## Features
 
-- **Single-hotel landing page** — full-screen hero, highlights, amenities, and photo gallery
-- **Room browsing & availability** — check dates and book Standard, Deluxe, or Suite rooms
-- **Email/password registration & login**
-- **Google Sign-In** with account linking (same email merges accounts)
-- **JWT-based sessions** — secure, stateless auth
-- **Protected bookings** — only you can view or cancel your reservations
-- **Welcome emails** on signup (optional SMTP configuration)
-- **Seed data** — Grand Plaza Hotel, Bengaluru with 3 room types
+### Frontend
+- **Single-hotel landing page** — full-screen hotel background, welcome hero, highlights, photo gallery, and amenities
+- **Glass-style UI cards** — modern overlay design over a fixed background image
+- **Room detail page** — check availability by date, view pricing, and book rooms
+- **My Bookings** — view and cancel your reservations
+- **Responsive layout** — works on desktop and mobile
+
+### Backend
+- **REST API** — hotels, rooms, availability, and bookings
+- **JWT authentication** — secure, stateless sessions
+- **Google Sign-In** — OAuth with account linking (same email merges accounts)
+- **Email/password auth** — register and login
+- **Welcome emails** — optional SMTP on signup
+- **Auto seed data** — Grand Plaza Hotel, Bengaluru with 3 room types
+
+---
 
 ## Prerequisites
 
 - Java 21+
 - Maven 3.9+
-- MongoDB (running on `localhost:27017`)
+- MongoDB (`localhost:27017` or MongoDB Atlas)
 - Node.js 18+
 - Google Cloud OAuth Client ID (for Google Sign-In)
 
@@ -52,13 +67,15 @@ cd Hotel-Booking-App
 
 ### 2. Start MongoDB
 
-Make sure MongoDB is running locally:
-
 ```bash
 mongod
 ```
 
-Or use MongoDB Atlas and update `backend/src/main/resources/application.properties`.
+Or use MongoDB Atlas and set the URI in `backend/src/main/resources/application.properties`:
+
+```properties
+spring.data.mongodb.uri=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/hotel_booking_db
+```
 
 ### 3. Configure Google OAuth
 
@@ -66,7 +83,7 @@ Or use MongoDB Atlas and update `backend/src/main/resources/application.properti
 2. Create a project → **APIs & Services** → **Credentials**
 3. Create an **OAuth 2.0 Client ID** (Web application)
 4. Add authorized JavaScript origin: `http://localhost:5173`
-5. Copy the Client ID into both config files:
+5. Copy the Client ID:
 
 **backend/src/main/resources/application.properties**
 
@@ -74,23 +91,19 @@ Or use MongoDB Atlas and update `backend/src/main/resources/application.properti
 app.google.client-id=YOUR_CLIENT_ID.apps.googleusercontent.com
 ```
 
-**frontend/.env**
+**frontend/.env** (create this file — it is gitignored)
 
 ```env
 VITE_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com
 ```
 
-Or set the backend value via environment variable: `GOOGLE_CLIENT_ID=...`
-
 ### 4. Configure Email (optional)
 
-Welcome emails are sent after email/password signup and new Google account creation.
-
-**Using Gmail (recommended for development):**
+Welcome emails are sent after signup. Using Gmail:
 
 1. Enable 2-Step Verification on your Google account
-2. Create an [App Password](https://myaccount.google.com/apppasswords) for "Mail"
-3. Add to `backend/src/main/resources/application.properties` or environment variables:
+2. Create an [App Password](https://myaccount.google.com/apppasswords)
+3. Add to `application.properties`:
 
 ```properties
 app.mail.enabled=true
@@ -99,7 +112,7 @@ spring.mail.username=your@gmail.com
 spring.mail.password=your-16-char-app-password
 ```
 
-Signup still works if mail is not configured — emails are skipped until you enable SMTP.
+Signup works without mail — emails are skipped until SMTP is enabled.
 
 ### 5. Run the Backend
 
@@ -108,9 +121,14 @@ cd backend
 mvn spring-boot:run
 ```
 
-The API starts at **http://localhost:8080**. Sample hotel and rooms are seeded automatically on first run.
+API: **http://localhost:8080**
 
-> **Note:** If port 8080 is already in use, stop the existing process or change `server.port` in `application.properties`.
+> **Port 8080 in use?** Stop the existing Java process or change `server.port` in `application.properties`.
+
+```powershell
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+```
 
 ### 6. Run the Frontend
 
@@ -120,43 +138,49 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:5173** in your browser.
+Open **http://localhost:5173**
 
-## Authentication
+---
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Create account (email + password) |
-| POST | `/api/auth/login` | Sign in with email + password |
-| POST | `/api/auth/google` | Sign in with Google ID token |
-| GET | `/api/auth/me` | Get current user (requires JWT) |
+## User Flow
 
-Protected routes require a `Bearer` token in the `Authorization` header.
+1. **Home** — Welcome page for Grand Plaza Hotel, Bengaluru
+2. **View Rooms & Rates** — Pick check-in/check-out dates and see available rooms
+3. **Sign In / Register** — Required before booking
+4. **Book Now** — Confirm guest details and create reservation
+5. **My Bookings** — View or cancel your bookings
+
+---
 
 ## API Endpoints
+
+### Authentication
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register` | No | Create account |
+| POST | `/api/auth/login` | No | Sign in |
+| POST | `/api/auth/google` | No | Google Sign-In |
+| GET | `/api/auth/me` | Yes | Current user |
+
+### Hotels & Rooms
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/api/hotels` | No | List hotels |
-| GET | `/api/hotels/{id}` | No | Get hotel details |
-| GET | `/api/rooms/hotel/{hotelId}` | No | List rooms for a hotel |
-| GET | `/api/rooms/available?hotelId=&checkIn=&checkOut=` | No | Available rooms by date |
-| POST | `/api/bookings` | Yes | Create a booking |
-| GET | `/api/bookings` | Yes | Get your bookings |
-| DELETE | `/api/bookings/{id}` | Yes | Cancel your booking |
+| GET | `/api/hotels/{id}` | No | Hotel details |
+| GET | `/api/rooms/hotel/{hotelId}` | No | Rooms for a hotel |
+| GET | `/api/rooms/available?hotelId=&checkIn=&checkOut=` | No | Available rooms |
 
-### Sample Register Request
+### Bookings
 
-```json
-{
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "password": "secret123",
-  "phone": "+91 9876543210"
-}
-```
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/bookings` | Yes | Create booking |
+| GET | `/api/bookings` | Yes | Your bookings |
+| DELETE | `/api/bookings/{id}` | Yes | Cancel booking |
 
-### Sample Booking Request (authenticated)
+### Sample Booking Request
 
 ```json
 {
@@ -169,6 +193,8 @@ Protected routes require a `Bearer` token in the `Authorization` header.
 }
 ```
 
+---
+
 ## Seed Data
 
 | Field | Value |
@@ -176,20 +202,25 @@ Protected routes require a `Bearer` token in the `Authorization` header.
 | Hotel | Grand Plaza Hotel |
 | City | Bengaluru |
 | Address | 45 MG Road, Bengaluru |
-| Rooms | Standard (₹3,500), Deluxe (₹5,500), Suite (₹9,000) |
+| Rating | 4.8 / 5.0 |
+| Rooms | Standard ₹3,500 · Deluxe ₹5,500 · Suite ₹9,000 |
+
+---
 
 ## Build for Production
 
 ```bash
-# Backend
+# Backend JAR
 cd backend
 mvn clean package
 
-# Frontend
+# Frontend static build
 cd frontend
 npm run build
 ```
 
-## License
+---
 
-MIT
+## Author
+
+**Pratiksha Mulgund** — [GitHub @prat-975](https://github.com/prat-975)
