@@ -1,0 +1,21 @@
+# Backend
+backend/target/
+backend/.idea/
+backend/*.iml
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDE & OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+frontend/.env
+backend/.env
